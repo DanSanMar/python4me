@@ -41,12 +41,12 @@ Para que el script ejecute las herramientas correctamente, debes tener instalado
 1. Instalar soporte de interfaz gráfica:
    ```bash
    sudo apt install python3-tk -y
-```
+
 Ejecutar el script:
 
 ```Bash
 sudo python3 scan4me.py
-```
+
 Ejecución en Windows
 Descarga el ejecutable desde la sección de Releases.
 
@@ -54,7 +54,7 @@ O ejecuta el script con Python instalado:
 
 ```Bash
 python scan4me.py
-```
+
 📦 Compilación a .exe (Windows)
 Si deseas generar tu propio ejecutable para Windows sin dependencias externas de Python:
 
@@ -62,12 +62,12 @@ Instala PyInstaller:
 
 ```Bash
 pip install pyinstaller
-```
+
 Compila el proyecto:
 
-Bash```
+```Bash
 pyinstaller --noconsole --onefile scan4me.py
-```
+
 El archivo resultante estará en la carpeta dist/.
 
 ⚖️ Descargo de Responsabilidad
