@@ -1,5 +1,5 @@
 Markdown
-# 🛡️ scan4me ahora en versión python
+# 🛡️ scan4me, ahora en versión python (Estamos en obras)
 
 **scan4me** es una herramienta de escaneo interactivo diseñada para agilizar la fase de reconocimiento en auditorías de seguridad y entornos de CTF. Esta versión en Python ofrece una interfaz gráfica clara (Light Mode) y está optimizada para ejecutarse en Windows y Linux.
 
@@ -64,15 +64,6 @@ Compila el proyecto:
 Bash
 pyinstaller --noconsole --onefile scan4me.py
 El archivo resultante estará en la carpeta dist/.
-
-📂 Estructura de Reportes
-Cada vez que inicias un escaneo, el programa genera una estructura organizada:
-
-Plaintext
-Auditoria_[Target]_[Fecha]/
-├── reporte_completo.txt   # Log acumulativo de toda la sesión
-├── nmap_auto_XXX.xml      # Reporte Nmap (si se activó XML)
-└── nmap_custom_XXX.xml    # Reportes de escaneos específicos
 
 ⚖️ Descargo de Responsabilidad
 Esta herramienta ha sido creada exclusivamente para fines educativos y auditorías de seguridad autorizadas. El uso de esta herramienta contra objetivos sin consentimiento previo es ilegal. El autor no se hace responsable del mal uso de este software.
