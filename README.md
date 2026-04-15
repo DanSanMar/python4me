@@ -57,12 +57,14 @@ Si deseas generar tu propio ejecutable para Windows sin dependencias externas de
 
 Instala PyInstaller:
 
-Bash
+```Bash
 pip install pyinstaller
+```
 Compila el proyecto:
 
-Bash
+Bash```
 pyinstaller --noconsole --onefile scan4me.py
+```
 El archivo resultante estará en la carpeta dist/.
 
 ⚖️ Descargo de Responsabilidad
