@@ -10,7 +10,7 @@ class Scan4MeApp:
     def __init__(self, root):
         self.root = root
         self.root.title("ALL 4 ME - Suite de Auditoría Interactiva v3.5.2")
-        self.root.geometry("1280x900")
+        self.root.geometry("1250x900")
         
         # --- Configuración de Colores (Light Mode) ---
         self.bg_main = "#f5f5f5"      # Gris muy claro
@@ -51,15 +51,15 @@ class Scan4MeApp:
 
         # --- Panel de Configuración ---
         config_frame = tk.LabelFrame(self.root, text=" 🎯 Configuración del Objetivo ", 
-                                    bg=self.bg_panel, fg=self.fg_text, font=("Segoe UI", 10, "bold"), padx=15, pady=10)
+                                    bg=self.bg_panel, fg=self.fg_text, font=("Segoe UI", 16, "bold"), padx=15, pady=10)
         config_frame.pack(fill="x", padx=20, pady=10)
 
         # Target e IP
         tk.Label(config_frame, text="Target (IP/Host):", bg=self.bg_panel).grid(row=0, column=0, sticky="w")
-        tk.Entry(config_frame, textvariable=self.target, width=25, font=("Consolas", 11)).grid(row=0, column=1, padx=10)
+        tk.Entry(config_frame, textvariable=self.target, width=25, font=("Consolas", 14)).grid(row=0, column=1, padx=10)
 
         tk.Label(config_frame, text="Ruta/Subdominio (ej: /phpmyadmin):", bg=self.bg_panel).grid(row=0, column=2, sticky="w")
-        tk.Entry(config_frame, textvariable=self.sub_path, width=25, font=("Consolas", 11)).grid(row=0, column=3, padx=10)
+        tk.Entry(config_frame, textvariable=self.sub_path, width=25, font=("Consolas", 14)).grid(row=0, column=3, padx=10)
 
         tk.Checkbutton(config_frame, text="Generar Reporte XML", variable=self.xml_status, 
                        bg=self.bg_panel, activebackground=self.bg_panel).grid(row=0, column=4, padx=20)
@@ -74,7 +74,7 @@ class Scan4MeApp:
         # Submenú Nmap (Dropdown)
         nmap_frame = tk.Frame(tools_frame, bg=self.bg_main)
         nmap_frame.pack(side="left", padx=5)
-        tk.Label(nmap_frame, text="Opciones Nmap:", bg=self.bg_main, font=("Segoe UI", 8)).pack()
+        tk.Label(nmap_frame, text="Opciones Nmap:", bg=self.bg_main, font=("Segoe UI", 10)).pack()
         self.nmap_opt = ttk.Combobox(nmap_frame, width=30, state="readonly", values=[
             "1. Reconocimiento Rápido (OS/Versión)",
             "2. Escaneo de Puertos Totales (p-)",
@@ -94,18 +94,18 @@ class Scan4MeApp:
 
         # --- Consola de Salida ---
         console_label = tk.Label(self.root, text=" 🖥️ Consola de Ejecución (Logs de Auditoría)", 
-                                 bg=self.bg_main, fg=self.fg_text, font=("Segoe UI", 9, "bold"))
+                                 bg=self.bg_main, fg=self.fg_text, font=("Segoe UI", 12, "bold"))
         console_label.pack(anchor="w", padx=20, pady=(10, 0))
         
         self.output = scrolledtext.ScrolledText(self.root, bg="#ffffff", fg="#1e1e1e", 
-                                               font=("Consolas", 10), insertbackground="black",
+                                               font=("Consolas", 14), insertbackground="black",
                                                highlightthickness=1, highlightbackground="#cccccc")
         self.output.pack(expand=True, fill="both", padx=20, pady=10)
 
     def create_tool_btn(self, parent, title, desc, cmd, color):
         frame = tk.Frame(parent, bg=self.bg_main)
         frame.pack(side="left", padx=5)
-        tk.Label(frame, text=desc, bg=self.bg_main, font=("Segoe UI", 8, "italic")).pack()
+        tk.Label(frame, text=desc, bg=self.bg_main, font=("Segoe UI", 10, "italic")).pack()
         btn = tk.Button(frame, text=title, command=cmd, bg=color, fg="white", 
                         width=15, font=("Segoe UI", 9, "bold"), relief="flat")
         btn.pack(pady=2)
