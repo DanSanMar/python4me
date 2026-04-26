@@ -9,10 +9,10 @@ from datetime import datetime
 class Scan4MeApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("ALL 4 ME - Suite de Auditoría Interactiva v3.5.2")
+        self.root.title("ALL 4 ME - scan4me.py v3.5.2")
         self.root.geometry("1250x900")
         
-        # --- Configuración de Colores (Light Mode) ---
+        # --- Configuración de Colores ---
         self.bg_main = "#f5f5f5"      # Gris muy claro
         self.bg_panel = "#ffffff"     # Blanco
         self.fg_text = "#2d2d2d"      # Gris oscuro/Negro
@@ -155,7 +155,7 @@ class Scan4MeApp:
     # --- ACCIONES ---
 
     def start_auto_scan(self):
-        """ Lógica de Escaneo Automático idéntica al Bash """
+        """ Lógica de Escaneo Automático """
         target = self.target.get()
         self.write_log(f"🚀 Iniciando Escaneo Automático Fase 1 (Discovery) en {target}...")
         self.run_command(f"nmap -sS -p- --open -T4 -Pn -n {target}", callback=self.fase_2_auto)
