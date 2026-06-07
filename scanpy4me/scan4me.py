@@ -13,21 +13,20 @@ class Scan4MeApp:
         self.root.title("ALL 4 ME - scan4me.py v5.6 (GUI Edition)")
         
         # --- Configuración de Pantalla Completa ---
-        # Intentamos maximizar de forma nativa dependiendo del SO
         try:
-            self.root.state('zoomed') # Funciona en Windows
+            self.root.state('zoomed') # Windows
         except:
-            self.root.attributes('-zoomed', True) # Funciona en varios gestores Linux
+            self.root.attributes('-zoomed', True) # Linux
             
-        self.root.geometry("1400x900") # Tamaño base si la maximización falla
+        self.root.geometry("1400x900")
         
-        # --- Configuración de Colores y Fuentes Grandes ---
-        self.bg_main = "#eef2f5"      # Gris azulado muy claro
-        self.bg_panel = "#ffffff"     # Blanco
-        self.fg_text = "#1a1a1a"      # Negro suave
-        self.accent_blue = "#0f4c75"  # Azul marino elegante
-        self.accent_green = "#28a745" # Verde
-        self.accent_red = "#c1272d"   # Rojo
+        # --- Colores y Fuentes Grandes ---
+        self.bg_main = "#eef2f5"
+        self.bg_panel = "#ffffff"
+        self.fg_text = "#1a1a1a"
+        self.accent_blue = "#0f4c75"
+        self.accent_green = "#28a745"
+        self.accent_red = "#c1272d"
         self.accent_purple = "#5f378a"
         
         self.f_title = ("Segoe UI", 16, "bold")
@@ -41,7 +40,7 @@ class Scan4MeApp:
         # --- Variables de Estado ---
         self.target = tk.StringVar()
         self.sub_path = tk.StringVar()
-        self.xml_status = tk.BooleanVar(value=True) # Por defecto activado como en el .sh ideal
+        self.xml_status = tk.BooleanVar(value=True)
         self.txt_status = tk.BooleanVar(value=True)
         self.folder = ""
         self.is_scanning = False
@@ -51,7 +50,7 @@ class Scan4MeApp:
 
     def check_root(self):
         if os.name != 'nt' and os.geteuid() != 0:
-            messagebox.showwarning("Atención", "No estás ejecutando el script como ROOT (sudo).\n\nAlgunas funciones como Nmap SYN (-sS) fallarán. Se recomienda reiniciar la herramienta con 'sudo python3 scan4me.py'.")
+            messagebox.showwarning("Atención", "No estás ejecutando el script como ROOT (sudo).\n\nAlgunas funciones como Nmap SYN (-sS) o arp-scan fallarán. Reinicia con 'sudo python3 scan4me.py'.")
 
     def setup_ui(self):
         # --- 1. BANNER Y LOGO ---
@@ -72,15 +71,12 @@ class Scan4MeApp:
         config_frame = tk.LabelFrame(self.root, text=" 🎯 1. Configuración del Objetivo ", bg=self.bg_panel, fg=self.fg_text, font=self.f_title, padx=20, pady=15)
         config_frame.pack(fill="x", padx=30, pady=15)
 
-        # IP
         tk.Label(config_frame, text="Target (IP/Dominio):", bg=self.bg_panel, font=self.f_label).grid(row=0, column=0, sticky="w")
         tk.Entry(config_frame, textvariable=self.target, width=25, font=self.f_entry).grid(row=0, column=1, padx=15)
 
-        # Ruta
         tk.Label(config_frame, text="Ruta Web (ej: /wordpress):", bg=self.bg_panel, font=self.f_label).grid(row=0, column=2, sticky="w", padx=(20,0))
         tk.Entry(config_frame, textvariable=self.sub_path, width=20, font=self.f_entry).grid(row=0, column=3, padx=15)
 
-        # Checkboxes
         tk.Checkbutton(config_frame, text="Generar Reportes XML/HTML/MD", variable=self.xml_status, font=self.f_label, bg=self.bg_panel).grid(row=0, column=4, padx=20)
         tk.Checkbutton(config_frame, text="Guardar Log TXT", variable=self.txt_status, font=self.f_label, bg=self.bg_panel).grid(row=0, column=5)
 
@@ -88,16 +84,15 @@ class Scan4MeApp:
         tools_frame = tk.LabelFrame(self.root, text=" 🚀 2. Ejecución de Herramientas ", bg=self.bg_panel, fg=self.fg_text, font=self.f_title, padx=20, pady=15)
         tools_frame.pack(fill="x", padx=30, pady=5)
 
-        # Contenedor superior para botones principales
         top_tools = tk.Frame(tools_frame, bg=self.bg_panel)
         top_tools.pack(fill="x", pady=5)
 
+        self.create_tool_btn(top_tools, "🌐 DISCOVER HOSTS", "Mapeo de Red Local (ARP/Ping)", self.run_network_discovery, "#e67e22")
         self.create_tool_btn(top_tools, "⚡ AUTO SCAN (CTF)", "Fase 1 + Sigilo + Versiones + Vulns", self.start_auto_scan, self.accent_green)
         self.create_tool_btn(top_tools, "🔍 WHATWEB", "Reconocimiento Stack Web", self.run_whatweb, self.accent_purple)
         self.create_tool_btn(top_tools, "📂 FEROXBUSTER", "Fuzzing Directorios Web", self.run_ferox, self.accent_red)
         self.create_tool_btn(top_tools, "Ⓜ️ WPSCAN", "Auditoría WordPress", self.run_wpscan, "#0073aa")
 
-        # Contenedor inferior para Submenús (Comboboxes)
         bottom_tools = tk.Frame(tools_frame, bg=self.bg_panel)
         bottom_tools.pack(fill="x", pady=(15, 0))
 
@@ -156,72 +151,128 @@ class Scan4MeApp:
         btn.pack()
         tk.Label(frame, text=desc, bg=self.bg_panel, fg="#666", font=("Segoe UI", 10, "italic")).pack(pady=2)
 
-    # --- NÚCLEO DE EJECUCIÓN (CONCURRENCIA SEGURA) ---
+    # --- NÚCLEO ROBUSTO DE EJECUCIÓN ---
+
+    def get_safe_target_name(self):
+        """Sanitiza IPs, URLs o CIDR para que no corrompan la creación de carpetas."""
+        raw_target = self.target.get().strip()
+        if not raw_target: return "Unknown_Target"
+        # Eliminar http:// o https:// y sustituir caracteres prohibidos en rutas
+        clean_name = re.sub(r'^https?://', '', raw_target)
+        return re.sub(r'[\\/*?:"<>|]', "_", clean_name)
 
     def write_log(self, text):
-        """Escribe en el cuadro de texto y en el archivo de log asegurando el hilo principal."""
+        """Escribe en la consola visual y guarda en .txt de forma segura."""
         self.output.insert(tk.END, text + "\n")
         self.output.see(tk.END)
+        
         if self.txt_status.get() and self.folder:
-            log_path = os.path.join(self.folder, f"Auditoria_Completa_{self.target.get()}.txt")
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(text + "\n")
+            safe_target = self.get_safe_target_name()
+            log_path = os.path.join(self.folder, f"Auditoria_Completa_{safe_target}.txt")
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(text + "\n")
+            except Exception as e:
+                self.output.insert(tk.END, f"[!] Aviso: No se pudo guardar en TXT ({e})\n")
 
     def sync_log(self, text):
-        """Metodo puente para escribir desde hilos secundarios al hilo UI de Tkinter."""
+        """Método puente seguro Tkinter <-> Hilos"""
         self.root.after(0, self.write_log, text)
 
     def init_folder(self):
+        """Crea la estructura de carpetas usando nombres seguros."""
         target = self.target.get().strip()
         if not target:
             messagebox.showwarning("Error", "¡Debes indicar un objetivo (IP o Dominio)!")
             return False
-        
+            
+        safe_target = self.get_safe_target_name()
         date_str = datetime.now().strftime("%d-%m-%Y")
-        self.folder = f"Auditoria_{target}_{date_str}"
-        if not os.path.exists(self.folder):
-            os.makedirs(self.folder)
-        return True
+        self.folder = f"Auditoria_{safe_target}_{date_str}"
+        
+        try:
+            os.makedirs(self.folder, exist_ok=True)
+            return True
+        except Exception as e:
+            messagebox.showerror("Error Fichero", f"No se pudo crear la carpeta: {e}")
+            return False
 
-    def run_command(self, cmd, callback=None, prefix=""):
-        if not self.init_folder(): return
+    def run_command(self, cmd, callback=None):
+        if not self.init_folder(): 
+            return
 
         if self.is_scanning:
             messagebox.showinfo("Aviso", "Ya hay un escaneo en progreso. Por favor espera.")
             return
 
+        self.is_scanning = True # Bloqueamos nuevos comandos hasta que acabe
+
         def task():
-            self.is_scanning = True
             separator = "="*70
             time_str = datetime.now().strftime('%d-%m-%Y %H:%M:%S')
-            
             self.sync_log(f"\n{separator}\n🕒 INICIO: {time_str}\n🚀 COMANDO: {cmd}\n{separator}")
             
             try:
+                # Usamos /bin/bash directo para garantizar que tuberías (pipes) y awk funcionen
+                shell_executable = '/bin/bash' if os.name != 'nt' else None
+                
+                # Leemos en formato RAW bytes y evitamos los buffers con iter()
                 process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
-                                         text=True, shell=True, encoding='utf-8', errors='replace')
+                                         shell=True, executable=shell_executable)
                 
                 output_content = []
-                for line in process.stdout:
-                    clean_line = line.strip()
-                    self.sync_log(clean_line)
-                    output_content.append(clean_line)
+                while True:
+                    line = process.stdout.readline()
+                    if not line and process.poll() is not None:
+                        break
+                    if line:
+                        # Decodificamos 'replace' previene crasheos por tildes o codificación extraña de Nmap
+                        clean_line = line.decode('utf-8', errors='replace').rstrip('\r\n')
+                        self.sync_log(clean_line)
+                        output_content.append(clean_line)
                 
-                process.wait()
                 full_output = "\n".join(output_content)
                 self.sync_log(f"{separator}\n✅ Tarea finalizada.\n")
                 
                 if callback:
-                    self.root.after(0, callback, full_output) # Llamar callback en hilo principal
+                    self.root.after(0, callback, full_output)
                     
             except Exception as e:
                 self.sync_log(f"❌ ERROR CRÍTICO: {str(e)}")
             finally:
-                self.is_scanning = False
+                self.is_scanning = False # Liberamos el escaner
 
         threading.Thread(target=task, daemon=True).start()
 
-    # --- LÓGICAS ESPECÍFICAS DE HERRAMIENTAS ---
+    # --- LÓGICAS ESPECÍFICAS ---
+
+    def run_network_discovery(self):
+        if not self.target.get().strip():
+            self.target.set("Red_Local")
+            
+        cmd = """
+        echo '=== [FASE 1] ARP-SCAN en la red local ==='
+        arp-scan --localnet --ignoredups 2>/dev/null
+        
+        echo ''
+        echo '=== [FASE 2] PING SWEEP Rápido (Nmap) ==='
+        if command -v ip >/dev/null 2>&1; then
+            subnets=$(ip -o -4 addr show | awk '{print $4}' | grep -v '127.0.0.1' || true)
+        else
+            subnets=$(ifconfig | awk '/inet / {print $2}' | grep -v '127.0.0.1' || true)
+        fi
+        
+        if [ -z "$subnets" ]; then
+            echo "❌ No se encontraron interfaces de red locales válidas."
+        else
+            for subnet in $subnets; do
+                echo ""
+                echo "[*] Escaneando subred: $subnet..."
+                nmap -sn -PS22,80,443,445 -PE --min-rate 5000 --max-rtt-timeout 20ms --host-timeout 1s "$subnet"
+            done
+        fi
+        """
+        self.run_command(cmd)
 
     def start_auto_scan(self):
         target = self.target.get().strip()
@@ -234,7 +285,7 @@ class Scan4MeApp:
         target = self.target.get().strip()
         
         if not ports:
-            self.sync_log("⚠️ No se detectaron puertos con escaneo rápido. Lanzando Fase 1 Alternativa (Sigilo / Evasión)...")
+            self.sync_log("⚠️ No se detectaron puertos abiertos. Lanzando Evasión Sigilosa...")
             self.run_command(f"nmap -sF --top-ports 1000 -Pn -n --open -T3 --data-length 25 --spoof-mac cisco {target}", callback=self.fase_1_stealth_callback)
             return
 
@@ -243,18 +294,20 @@ class Scan4MeApp:
     def fase_1_stealth_callback(self, output):
         ports = re.findall(r"(\d+)/tcp\s+open", output)
         if not ports:
-            self.sync_log("❌ Tampoco se detectaron puertos con sigilo. Host caído o fuertemente protegido.")
+            self.sync_log("❌ Tampoco se detectaron puertos con sigilo. Host caído o totalmente protegido.")
             return
         self.lanzar_fase_2(ports)
 
     def lanzar_fase_2(self, ports):
         port_list = ",".join(ports)
         target = self.target.get().strip()
+        safe_t = self.get_safe_target_name()
+        
         self.sync_log(f"\n✅ Puertos confirmados: {port_list}\n[🚀 FASE 2] Extrayendo Versiones y Servicios...")
         
         time_mark = datetime.now().strftime("%H%M%S")
-        self.current_fase2_base = f"{self.folder}/nmap_auto_{target}_{time_mark}_fase2"
-        self.current_fase3_base = f"{self.folder}/nmap_auto_{target}_{time_mark}_fase3"
+        self.current_fase2_base = f"{self.folder}/nmap_auto_{safe_t}_{time_mark}_fase2"
+        self.current_fase3_base = f"{self.folder}/nmap_auto_{safe_t}_{time_mark}_fase3"
         
         cmd = f"nmap -sSCV -Pn -n -v -p {port_list} {target}"
         if self.xml_status.get():
@@ -272,30 +325,28 @@ class Scan4MeApp:
 
     def procesar_reportes(self, _=None):
         if not self.xml_status.get():
-            self.sync_log("✅ Escaneo CTF Finalizado (Modo solo texto).")
+            self.sync_log("✅ Escaneo CTF Finalizado (Archivos no requeridos).")
             return
 
         self.sync_log("\n[⚙️] Generando Reportes Inteligentes (Markdown, HTML, Prompt IA)...")
         target = self.target.get().strip()
+        safe_t = self.get_safe_target_name()
         timestamp = datetime.now().strftime("%H%M%S")
         
         nmap_f2 = f"{self.current_fase2_base}.nmap"
         nmap_f3 = f"{self.current_fase3_base}.nmap"
         xml_f2 = f"{self.current_fase2_base}.xml"
         
-        html_out = f"{self.folder}/Writeup_{target}_{timestamp}.html"
-        md_out = f"{self.folder}/Writeup_{target}_{timestamp}.md"
-        ia_out = f"{self.folder}/ia_prompt_{target}.txt"
+        html_out = f"{self.folder}/Writeup_{safe_t}_{timestamp}.html"
+        md_out = f"{self.folder}/Writeup_{safe_t}_{timestamp}.md"
+        ia_out = f"{self.folder}/ia_prompt_{safe_t}.txt"
 
-        # 1. HTML via xsltproc
         if os.path.exists(xml_f2):
             try:
                 subprocess.run(["xsltproc", xml_f2, "-o", html_out], stderr=subprocess.DEVNULL)
-                self.sync_log(f"   ✔️ Reporte HTML generado: {os.path.basename(html_out)}")
-            except:
-                pass # xsltproc no instalado
+                self.sync_log(f"   ✔️ Reporte HTML generado.")
+            except: pass
 
-        # 2. MARKDOWN (Para CTF)
         if os.path.exists(nmap_f2):
             try:
                 with open(nmap_f2, 'r', encoding='utf-8', errors='replace') as f:
@@ -303,10 +354,7 @@ class Scan4MeApp:
                 
                 md_content = f"# 🎯 CTF Writeup / Auto-Report: {target}\n"
                 md_content += f"📅 **Fecha:** {datetime.now().strftime('%d-%m-%Y %H:%M:%S')}\n\n"
-                md_content += "## 🚪 Puertos y Servicios Detectados\n"
-                md_content += "```text\n"
-                
-                # Extraer bloque de puertos
+                md_content += "## 🚪 Puertos y Servicios Detectados\n```text\n"
                 ports_block = re.search(r'(PORT\s+STATE\s+SERVICE.*?\n\n)', data_f2, re.DOTALL)
                 if ports_block: md_content += ports_block.group(1)
                 md_content += "```\n\n## ⚡ Vulnerabilidades (Nmap Vuln)\n"
@@ -319,30 +367,27 @@ class Scan4MeApp:
                         md_content += "```\n"
 
                 with open(md_out, 'w', encoding='utf-8') as f: f.write(md_content)
-                self.sync_log(f"   ✔️ Writeup Markdown generado: {os.path.basename(md_out)}")
+                self.sync_log(f"   ✔️ Writeup Markdown estructurado.")
                 
-                # 3. PROMPT PARA IA
-                ia_content = "ACTÚA COMO UN TUTOR EXPERTO EN CIBERSEGURIDAD Y METODOLOGÍAS CTF.\n"
-                ia_content += f"Analiza el siguiente output técnico sobre el objetivo: {target}\n"
-                ia_content += "Por favor, detalla: Superficie de ataque, CVEs teóricos, Vectores de entrada, y Metodología educativa.\n"
-                ia_content += f"\n--- START TARGET DATA ---\n{md_content}\n--- END TARGET DATA ---\n"
+                ia_content = f"Actúa como tutor de CTF. Objetivo: {target}\n\n{md_content}"
                 with open(ia_out, 'w', encoding='utf-8') as f: f.write(ia_content)
-                self.sync_log(f"   ✔️ Prompt optimizado para IA generado: {os.path.basename(ia_out)}")
+                self.sync_log(f"   ✔️ Prompt de IA guardado.")
 
             except Exception as e:
-                self.sync_log(f"   ⚠️ Error procesando MD/IA: {str(e)}")
+                self.sync_log(f"   ⚠️ Error de parseo MD: {e}")
 
-        # Limpieza de archivos base para no ensuciar
+        # Limpieza de temporales
         for ext in ['.xml', '.nmap', '.gnmap']:
             try:
                 if os.path.exists(self.current_fase2_base + ext): os.remove(self.current_fase2_base + ext)
                 if os.path.exists(self.current_fase3_base + ext): os.remove(self.current_fase3_base + ext)
             except: pass
-        self.sync_log("\n✅ Proceso Automático Finalizado. Archivos guardados y limpios.")
+        self.sync_log("\n✅ Limpieza lista. Resultados en la carpeta generada.")
 
     def run_nmap_submenu(self):
         choice = self.nmap_opt.get()
         target = self.target.get().strip()
+        safe_t = self.get_safe_target_name()
         
         cmds = {
             "1.": f"nmap -sS -O -Pn -n -vvv -T4 {target}",
@@ -361,11 +406,10 @@ class Scan4MeApp:
         for key, cmd in cmds.items():
             if choice.startswith(key):
                 if self.xml_status.get() and self.init_folder():
-                    xml_file = f"{self.folder}/nmap_custom_{datetime.now().strftime('%H%M%S')}.xml"
-                    cmd += f" -oX {xml_file}"
+                    cmd += f" -oX {self.folder}/nmap_{safe_t}_{datetime.now().strftime('%H%M%S')}.xml"
                 self.run_command(cmd)
                 return
-        messagebox.showinfo("Info", "Selecciona una opción válida del menú.")
+        messagebox.showinfo("Info", "Selecciona una opción válida del menú desplegable.")
 
     def run_win_submenu(self):
         choice = self.win_opt.get()
@@ -394,7 +438,6 @@ class Scan4MeApp:
         target = self.target.get().strip()
         url = target if target.startswith("http") else f"http://{target}"
         
-        # Búsqueda dinámica del wordlist igual que en Bash
         real_home = os.path.expanduser("~")
         if 'SUDO_USER' in os.environ:
             real_home = os.path.expanduser(f"~{os.environ['SUDO_USER']}")
@@ -404,11 +447,9 @@ class Scan4MeApp:
             "/usr/share/seclists/Discovery/Web-Content/common.txt",
             "/snap/seclists/current/Discovery/Web-Content/common.txt"
         ]
-        
         wordlist = next((w for w in possible_paths if os.path.exists(w)), "common.txt")
         
-        cmd = f"feroxbuster --url {url} --wordlist {wordlist} --extensions bak,zip,txt,sql,old,php.bak --no-recursion --filter-size 0 --threads 50 --timeout 5"
-        self.run_command(cmd)
+        self.run_command(f"feroxbuster --url {url} --wordlist {wordlist} --extensions bak,zip,txt,sql,old,php.bak --no-recursion --filter-size 0 --threads 50 --timeout 5")
 
     def run_wpscan(self):
         target = self.target.get().strip()
